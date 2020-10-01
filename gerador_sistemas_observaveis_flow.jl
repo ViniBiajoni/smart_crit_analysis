@@ -1,6 +1,6 @@
 clearconsole()
 # Caminho = "D:/Programas Julia/Gerador Sistemas Observaveis"
-# Caminho = "C:/Users/vinib/OneDrive/Documentos/Doutorado/Tec. Inteligentes em Sist Pot/Monta_Sist_Observaveis"
+ Caminho = "C:/Users/vinib/OneDrive/Documentos/Doutorado/Tec. Inteligentes em Sist Pot/Monta_Sist_Observaveis"
 # Caminho = "C:/Users/Rafael/OneDrive/Julia/meas-scheme-gen"
 
 cd(Caminho)
@@ -103,7 +103,8 @@ if (net_connection == 118)
 
 end
 
-function  Gera_Cov(A,redun)
+
+function  Gera_Cov(A,nmed)
     (full_med, numflow) = vetMed(A) # monta a versão
     # Constroi o vetor que organiza as medidas disponíveis.
     # Da forma: [|barra de| |barra para| |ligado ou desligado|]
@@ -117,8 +118,8 @@ function  Gera_Cov(A,redun)
     med=0
     sorteio = collect(1:1:numflow)
 
-    while  abs(det(G)) < 1E-4 && numflow != 0
-        med=med+1
+    while  (abs(det(G)) < 1E-4 || med<nmed) && numflow != 0
+
 
         #Sorteia
         val_sorteado = rand(1:numflow)
@@ -134,7 +135,7 @@ function  Gera_Cov(A,redun)
         numflow = numflow-1
         H=jacobiana(full_med,A,1)
         G = transpose(H) * H
-
+        med=med+1
         #Q,R = qr(G)
 
     end
@@ -145,22 +146,32 @@ function  Gera_Cov(A,redun)
         return(E,full_med)
 end
 
-(E,full_med)=Gera_Cov(A,3)
 
-nmedidores=sum(full_med[:,3])
+numero_casos = 1 # numero de casos a serem gerados
 
+#Geracao de multiplos casos
+for i=1:numero_casos
 
-#Imprime a matriz de Covariâncias
-date=string(Date(now()),"_",hour(now()),"h",minute(now()),"m")
-nomeE=string("E",size(A,1),"b",nmedidores,"m",date,".txt")
+    ### Qtde minima de medidas para cada plano a ser Gerador
+    nmed= 26 #14 Barras
+    #nmed= 55 #30 Barras
+    #nmed= 225 #118 Barras
+    (E,full_med)=Gera_Cov(A,nemd)
+    nmedidores=sum(full_med[:,3])
 
-open(nomeE, "w") do io
-    writedlm(io, E, ',')
-end
+    ###Imprime a matriz de Covariâncias
+    date=string(Date(now()),"_",hour(now()),"h",minute(now()),"m")
+    nomeE=string("E",size(A,1),"b",nmedidores,"m",date,".txt")
 
-#Imprime o arquivo de medidas
+    open(nomeE, "w") do io
+        writedlm(io, E, ',')
+    end
 
-nome_sistMed = string("Med_Plan",size(A,1),"b",nmedidores,"m",date,".txt")
-open(nome_sistMed, "w") do io
-    writedlm(io, full_med, ',')
+    ####Imprime o arquivo de medidas
+
+    nome_sistMed = string("Med_Plan",size(A,1),"b",nmedidores,"m",date,".txt")
+    open(nome_sistMed, "w") do io
+        writedlm(io, full_med, ',')
+    end
+
 end
